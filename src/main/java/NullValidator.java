@@ -19,8 +19,8 @@ public class NullValidator {
     public static <T> void validate(T t) {
 
         List<String> nullFields = Arrays.stream(t.getClass().getDeclaredMethods())
-                .filter(m -> GETTER_PREFIX_PATTERN.matcher(m.getName()).matches())
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
+                .filter(m -> GETTER_PREFIX_PATTERN.matcher(m.getName()).matches())
                 .filter(m -> {
                     Object value = Suppliers.tryAndGet(() -> m.invoke(t));
                     return Objects.isNull(value);
