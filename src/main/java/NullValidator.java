@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import static com.google.common.base.CaseFormat.LOWER_CAMEL;
 import static com.google.common.base.CaseFormat.UPPER_CAMEL;
 import static java.lang.invoke.MethodType.methodType;
+import static java.util.Arrays.stream;
 
 public class NullValidator {
 
@@ -25,7 +26,7 @@ public class NullValidator {
 
     public static <T> void validate(T t) {
 
-        List<String> nullFields = Arrays.stream(t.getClass().getDeclaredMethods())
+        List<String> nullFields = stream(t.getClass().getDeclaredMethods())
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
                 .filter(m -> GETTER_PREFIX_PATTERN.matcher(m.getName()).matches())
                 .filter(m -> {
@@ -45,17 +46,12 @@ public class NullValidator {
 
     public static <T> void validateUsingMethodHandles(T t) {
 
-        List<String> nullFields = Arrays.stream(t.getClass().getDeclaredFields())
+        List<String> nullFields = stream(t.getClass().getDeclaredFields())
                 .filter(f -> {
                     MethodHandles.Lookup lookup = MethodHandles.lookup();
-                    String capitalizedFieldName = LOWER_CAMEL.to(UPPER_CAMEL, f.getName());
                     Class<?> fieldType = f.getType();
-                    String getterPrefix;
-                    if (fieldType.equals(boolean.class)) {
-                        getterPrefix = "is";
-                    } else {
-                        getterPrefix = "get";
-                    }
+                    String getterPrefix = fieldType.equals(boolean.class) ? "is" : "get";
+                    String capitalizedFieldName = LOWER_CAMEL.to(UPPER_CAMEL, f.getName());
                     String getterName = getterPrefix + capitalizedFieldName;
                     MethodHandle getterHandle =
                             Suppliers.tryGet(() -> lookup.findVirtual(t.getClass(), getterName,
