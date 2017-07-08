@@ -8,7 +8,7 @@ public class NullValidatorTest {
     public ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void doesNotFail() {
+    public void doesNotFail() throws Throwable {
         TestPojo testPojo = TestPojo.builder()
                 .age(10)
                 .amount(1)
@@ -17,11 +17,12 @@ public class NullValidatorTest {
                 .build();
 
         NullValidator.validate(testPojo);
+        NullValidator.validateUsingMethodHandles(testPojo);
 
     }
 
     @Test
-    public void failsIfSomeFieldsAreNull() {
+    public void failsIfSomeFieldsAreNull() throws Throwable {
         TestPojo testPojo = TestPojo.builder()
                 .age(10).build();
 
@@ -30,5 +31,18 @@ public class NullValidatorTest {
 
         NullValidator.validate(testPojo);
     }
+
+    @Test
+    public void failsIfSomeFieldsAreNullUsingMethodHandles() throws Throwable {
+        TestPojo testPojo = TestPojo.builder()
+                .age(10).build();
+
+        exception.expect(IllegalStateException.class);
+        exception.expectMessage("[amount,country] is/are null for TestPojo");
+
+        NullValidator.validateUsingMethodHandles(testPojo);
+    }
+
+
 
 }

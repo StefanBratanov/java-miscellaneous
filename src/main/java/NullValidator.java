@@ -1,6 +1,9 @@
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Joiner;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
@@ -8,6 +11,10 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.google.common.base.CaseFormat.LOWER_CAMEL;
+import static com.google.common.base.CaseFormat.UPPER_CAMEL;
+import static java.lang.invoke.MethodType.methodType;
 
 public class NullValidator {
 
@@ -22,7 +29,7 @@ public class NullValidator {
                 .filter(m -> !Modifier.isStatic(m.getModifiers()))
                 .filter(m -> GETTER_PREFIX_PATTERN.matcher(m.getName()).matches())
                 .filter(m -> {
-                    Object value = Suppliers.tryAndGet(() -> m.invoke(t));
+                    Object value = Suppliers.tryGet(() -> m.invoke(t));
                     return Objects.isNull(value);
                 })
                 .map(m -> {
@@ -32,10 +39,41 @@ public class NullValidator {
                 })
                 .collect(Collectors.toList());
 
+        throwExceptionWhenThereAreNullFieldsFor(t, nullFields);
+
+    }
+
+    public static <T> void validateUsingMethodHandles(T t) {
+
+        List<String> nullFields = Arrays.stream(t.getClass().getDeclaredFields())
+                .filter(f -> {
+                    MethodHandles.Lookup lookup = MethodHandles.lookup();
+                    String capitalizedFieldName = LOWER_CAMEL.to(UPPER_CAMEL, f.getName());
+                    Class<?> fieldType = f.getType();
+                    String getterPrefix;
+                    if (fieldType.equals(boolean.class)) {
+                        getterPrefix = "is";
+                    } else {
+                        getterPrefix = "get";
+                    }
+                    String getterName = getterPrefix + capitalizedFieldName;
+                    MethodHandle getterHandle =
+                            Suppliers.tryGet(() -> lookup.findVirtual(t.getClass(), getterName,
+                                    methodType(fieldType)));
+                    Object value = Suppliers.tryGet(() -> getterHandle.invoke(t));
+                    return Objects.isNull(value);
+                })
+                .map(Field::getName)
+                .collect(Collectors.toList());
+
+        throwExceptionWhenThereAreNullFieldsFor(t, nullFields);
+    }
+
+    private static <T> void throwExceptionWhenThereAreNullFieldsFor(T t, List<String> nullFields) {
         if (!nullFields.isEmpty()) {
             String exceptionMessage = String.format("[%s] is/are null for %s", Joiner.on(",").join(nullFields), t.getClass().getSimpleName());
             throw new IllegalStateException(exceptionMessage);
         }
-
     }
+
 }

@@ -1,9 +1,11 @@
 public class Suppliers {
 
-    public static <T> T tryAndGet(ThrowableSupplier<T> supplier) {
+    private Suppliers() {}
+
+    public static <T> T tryGet(ThrowableSupplier<T> supplier) {
         try {
             return supplier.get();
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             throw new IllegalStateException(ex);
         }
     }
@@ -11,6 +13,6 @@ public class Suppliers {
     @FunctionalInterface
     public interface ThrowableSupplier<T> {
 
-        T get() throws Exception;
+        T get() throws Throwable;
     }
 }
