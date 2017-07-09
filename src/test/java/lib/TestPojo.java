@@ -1,3 +1,5 @@
+package lib;
+
 import lombok.Builder;
 import lombok.Data;
 
