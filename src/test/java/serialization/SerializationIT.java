@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,15 +41,37 @@ public class SerializationIT {
 
         Path testPath = fileSystem.getPath("test.txt");
 
-        Stream.of(testPojo,testPojo1)
-                .collect(SerializingFileCollector.create(testPath));
+        Stream.of(testPojo, testPojo1)
+                .collect(SerializingFileCollectors.create(testPath));
 
-        List<TestPojo> result = Streams.stream(DeserializingFileIterator.create(testPath, TestPojo.class))
+        List<TestPojo> result = SerializingFileCollectors.read(testPath, TestPojo.class)
                 .collect(Collectors.toList());
 
-        assertThat(result).containsExactly(testPojo,testPojo1);
+        assertThat(result).containsExactly(testPojo, testPojo1);
+    }
+
+    @Test
+    public void testPerformance() {
+
+        Path testPath = fileSystem.getPath("test.txt");
+
+        Long size = 1000000L;
+
+        IntStream.iterate(0,i -> i + 1)
+                .limit(size)
+                .mapToObj(i -> testPojo())
+                .collect(SerializingFileCollectors.create(testPath));
+
+        List<TestPojo> result = SerializingFileCollectors.read(testPath, TestPojo.class)
+                .collect(Collectors.toList());
+
+        assertThat(result).hasSize(size.intValue());
+
+        //a random element from the list is equal to testPojo()
+        assertThat(result.get((int)(Math.random()*size) - 1)).isEqualTo(testPojo());
 
     }
+
 
     private TestPojo testPojo() {
         return TestPojo.builder()
