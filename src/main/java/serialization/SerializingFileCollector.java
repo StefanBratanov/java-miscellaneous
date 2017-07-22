@@ -21,6 +21,7 @@ import static java.nio.file.Files.newOutputStream;
 public class SerializingFileCollector<T> implements Collector<T, Kryo, Void> {
 
     private volatile Output output;
+    private volatile Kryo kryo;
 
     private SerializingFileCollector(Path path) {
         OutputStream outputStream = Suppliers.tryGet(() -> newOutputStream(path));
@@ -29,7 +30,7 @@ public class SerializingFileCollector<T> implements Collector<T, Kryo, Void> {
 
     @Override
     public Supplier<Kryo> supplier() {
-        Kryo kryo = new Kryo();
+        kryo = new Kryo();
         kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
         kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
         return () -> kryo;
@@ -42,7 +43,7 @@ public class SerializingFileCollector<T> implements Collector<T, Kryo, Void> {
 
     @Override
     public BinaryOperator<Kryo> combiner() {
-        return (i1, i2) -> i1;
+        return (i1,i2) -> i1;
     }
 
     @Override
