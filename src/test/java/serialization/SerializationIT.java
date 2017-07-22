@@ -4,9 +4,11 @@ import com.google.common.collect.Streams;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import lib.TestPojo;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.List;
@@ -22,6 +24,11 @@ public class SerializationIT {
     @Before
     public void init() {
         fileSystem = Jimfs.newFileSystem(Configuration.unix());
+    }
+
+    @After
+    public void after() throws IOException {
+        fileSystem.close();
     }
 
     @Test
